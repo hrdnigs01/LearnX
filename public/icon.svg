@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3F4636" />
+      <stop offset="100%" stop-color="#24281E" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E5A93C" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+    <linearGradient id="book" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#E2E8F0" />
+    </linearGradient>
+  </defs>
+  <!-- Background with subtle border -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)" />
+  <rect x="12" y="12" width="488" height="488" rx="100" fill="none" stroke="#5A634E" stroke-width="4" stroke-opacity="0.4" />
+  
+  <!-- Graduation Cap -->
+  <g transform="translate(256, 185)">
+    <!-- Cap top rhombus -->
+    <polygon points="0,-65 140,-12 0,40 -140,-12" fill="url(#accent)" />
+    <!-- Cap skull cap underside -->
+    <path d="M-75,10 C-75,55 75,55 75,10 L75,25 C75,68 -75,68 -75,25 Z" fill="#B45309" opacity="0.9" />
+    <!-- Tassel -->
+    <path d="M120,-4 L138,40 L134,80" fill="none" stroke="#FDE68A" stroke-width="5" stroke-linecap="round" />
+    <circle cx="134" cy="88" r="7" fill="#FDE68A" />
+    <circle cx="0" cy="-12" r="8" fill="#FDE68A" />
+  </g>
+
+  <!-- Open Book -->
+  <g transform="translate(256, 335)">
+    <!-- Left page -->
+    <path d="M-15,-20 C-60,-45 -120,-35 -145,-20 L-145,55 C-120,40 -60,30 -15,55 Z" fill="url(#book)" />
+    <!-- Right page -->
+    <path d="M15,-20 C60,-45 120,-35 145,-20 L145,55 C120,40 60,30 15,55 Z" fill="url(#book)" />
+    <!-- Book Spine center -->
+    <path d="M-15,-20 Q0,-12 15,-20 L15,55 Q0,62 -15,55 Z" fill="#CBD5E1" />
+    <!-- Page lines left -->
+    <line x1="-120" y1="0" x2="-45" y2="-12" stroke="#94A3B8" stroke-width="4" stroke-linecap="round" />
+    <line x1="-120" y1="20" x2="-45" y2="8" stroke="#94A3B8" stroke-width="4" stroke-linecap="round" />
+    <!-- Page lines right -->
+    <line x1="45" y1="-12" x2="120" y2="0" stroke="#94A3B8" stroke-width="4" stroke-linecap="round" />
+    <line x1="45" y1="8" x2="120" y2="20" stroke="#94A3B8" stroke-width="4" stroke-linecap="round" />
+  </g>
+
+  <!-- Badge Text / Subtitle -->
+  <text x="256" y="445" text-anchor="middle" fill="#E2E8F0" font-family="'Plus Jakarta Sans', sans-serif" font-weight="800" font-size="34" letter-spacing="4">LEARNX</text>
+</svg>

@@ -1,0 +1,10 @@
+{
+  "name": "Remix Remix LearnX",
+  "description": "NCERT education platform for Classes 6-12 with AI doubt solver, community Q&A forums, performance analytics, feedback engine, tuition finder, study planner, and UPI payments.",
+  "requestFramePermissions": [
+    "notifications"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
