@@ -19,6 +19,7 @@ import {
   SavedBookmark,
   DiscussionQuestion,
   WalletTransaction,
+  UserQuestionAttemptHistory,
 } from '../src/types';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -43,6 +44,7 @@ export interface DatabaseSchema {
   discussions: DiscussionQuestion[];
   walletTransactions: WalletTransaction[];
   emailAuditLogs: any[];
+  userQuestionHistory: UserQuestionAttemptHistory[];
 }
 
 // Initial seed data
@@ -1951,6 +1953,9 @@ class DatabaseManager {
           feedbacks: parsed.feedbacks || initialFeedbacks,
           bookmarks: parsed.bookmarks || initialBookmarks,
           discussions: parsed.discussions || initialDiscussions,
+          walletTransactions: parsed.walletTransactions || [],
+          emailAuditLogs: parsed.emailAuditLogs || [],
+          userQuestionHistory: parsed.userQuestionHistory || [],
         };
       }
     } catch (err) {
@@ -1974,6 +1979,9 @@ class DatabaseManager {
       feedbacks: initialFeedbacks,
       bookmarks: initialBookmarks,
       discussions: initialDiscussions,
+      walletTransactions: [],
+      emailAuditLogs: [],
+      userQuestionHistory: [],
     };
 
     this.saveData(defaultData);

@@ -35,7 +35,14 @@ import {
   DiscussionAnswer,
   StudentPerformanceAnalytics,
   WalletTransaction,
+  UserQuestionAttemptHistory,
 } from './src/types';
+import { pyqBattleQuestionsPool } from './src/data/competitiveExamData';
+import {
+  shuffleQuestionOptions,
+  filterUniqueQuestions,
+  getRecommendedTimerSeconds,
+} from './src/utils/questionEngine';
 
 dotenv.config();
 
@@ -692,6 +699,111 @@ async function startServer() {
         xpLeaderboard: sortedXP,
         userQuizRank,
         userXpRank,
+      });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  // ==========================================
+  // UNIQUE QUESTION ENGINE & HISTORY APIS
+  // ==========================================
+
+  // 1. Fetch Unique Non-Repeating Questions with Shuffled Options & Adaptive Timers
+  app.get('/api/quiz/questions', (req, res) => {
+    try {
+      const authUser = getAuthUser(req);
+      const subject = (req.query.subject as string) || 'All';
+      const classLevel = req.query.classLevel ? parseInt(req.query.classLevel as string, 10) : undefined;
+      const topic = (req.query.topic as string) || undefined;
+      const difficulty = (req.query.difficulty as string) || undefined;
+      const count = req.query.count ? parseInt(req.query.count as string, 10) : 5;
+
+      // Fetch user's question attempt history to exclude already attempted questions
+      const historyList: UserQuestionAttemptHistory[] = db.get('userQuestionHistory') || [];
+      const userAttemptedIds = new Set(
+        historyList.filter((h) => h.userId === authUser.id).map((h) => h.questionId)
+      );
+
+      // Filter unique questions using Fisher-Yates shuffle on options
+      const selected = filterUniqueQuestions(pyqBattleQuestionsPool, userAttemptedIds, {
+        subject,
+        classLevel,
+        topic,
+        difficulty,
+        count,
+      });
+
+      // Augment questions with recommended timers (60-120s for MCQ, 180-300s for numericals)
+      const augmented = selected.map((q) => ({
+        ...q,
+        timeLimitSeconds: getRecommendedTimerSeconds(q),
+      }));
+
+      res.json({
+        success: true,
+        totalAvailableInPool: pyqBattleQuestionsPool.length,
+        userAttemptedCount: userAttemptedIds.size,
+        returnedCount: augmented.length,
+        questions: augmented,
+      });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  // 2. Record Question Attempt into Persistent History
+  app.post('/api/quiz/record-history', (req, res) => {
+    try {
+      const authUser = getAuthUser(req);
+      const { questionId, subject, chapterTopic, classLevel, selectedOptionIndex, isCorrect, context } = req.body;
+
+      if (!questionId) {
+        return res.status(400).json({ success: false, message: 'questionId is required' });
+      }
+
+      const historyList: UserQuestionAttemptHistory[] = db.get('userQuestionHistory') || [];
+      const newEntry: UserQuestionAttemptHistory = {
+        id: `att_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        userId: authUser.id,
+        questionId,
+        subject,
+        chapterTopic,
+        classLevel: classLevel || authUser.classLevel,
+        selectedOptionIndex,
+        isCorrect: !!isCorrect,
+        attemptedAt: new Date().toISOString(),
+        context: context || 'chapter_quiz',
+      };
+
+      historyList.push(newEntry);
+      db.set('userQuestionHistory', historyList);
+
+      res.json({ success: true, entry: newEntry });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  // 3. User Question Attempt Summary
+  app.get('/api/quiz/user-history', (req, res) => {
+    try {
+      const authUser = getAuthUser(req);
+      const historyList: UserQuestionAttemptHistory[] = db.get('userQuestionHistory') || [];
+      const userHistory = historyList.filter((h) => h.userId === authUser.id);
+
+      const uniqueQuestionIds = Array.from(new Set(userHistory.map((h) => h.questionId)));
+      const correctCount = userHistory.filter((h) => h.isCorrect).length;
+      const totalCount = userHistory.length;
+      const accuracyPercentage = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+
+      res.json({
+        success: true,
+        totalAttempts: totalCount,
+        uniqueQuestionsAttempted: uniqueQuestionIds.length,
+        correctCount,
+        accuracyPercentage,
+        attemptedQuestionIds: uniqueQuestionIds,
       });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });

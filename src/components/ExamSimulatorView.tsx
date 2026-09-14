@@ -17,6 +17,7 @@ import {
   TrendingUp,
   X,
   Menu,
+  Sliders,
 } from 'lucide-react';
 import {
   User,
@@ -29,6 +30,7 @@ import {
 import { mockExamPapersList } from '../data/competitiveExamData';
 import { addMistakeToVault } from '../utils/mistakeVault';
 import { playChime } from '../utils/audio';
+import { CustomTestBuilder } from './CustomTestBuilder';
 
 interface ExamSimulatorViewProps {
   currentUser: User;
@@ -45,10 +47,14 @@ export const ExamSimulatorView: React.FC<ExamSimulatorViewProps> = ({
   onNavigateToMistakes,
   onNavigateToBattles,
 }) => {
+  // Simulator mode: Pre-built All-India Mock Papers vs Dynamic Custom Test Generator
+  const [simulatorMode, setSimulatorMode] = useState<'presets' | 'custom'>('presets');
+  const [activeCustomPaper, setActiveCustomPaper] = useState<ExamSimulatorPaper | null>(null);
+
   // Selected Paper
   const [selectedPaperIndex, setSelectedPaperIndex] = useState(0);
   const activePaper: ExamSimulatorPaper =
-    mockExamPapersList[selectedPaperIndex] || mockExamPapersList[0];
+    activeCustomPaper || mockExamPapersList[selectedPaperIndex] || mockExamPapersList[0];
 
   // Exam Run State
   const [examStatus, setExamStatus] = useState<'intro' | 'testing' | 'submitted'>('intro');
@@ -69,6 +75,27 @@ export const ExamSimulatorView: React.FC<ExamSimulatorViewProps> = ({
     activePaper.totalTimeMinutes * 60
   );
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Start Examination from custom test builder
+  const handleStartCustomExam = (paper: ExamSimulatorPaper) => {
+    setActiveCustomPaper(paper);
+    setExamStatus('testing');
+    setTimeRemainingSeconds(paper.totalTimeMinutes * 60);
+    setCurrentSectionId(paper.sections[0]?.id || '');
+    setCurrentQuestionIndex(0);
+    setIsExportedToMistakes(false);
+
+    const initialMap: Record<string, ExamQuestionState> = {};
+    paper.questions.forEach((q, idx) => {
+      initialMap[q.id] = {
+        selectedOption: null,
+        status: idx === 0 ? 'not_answered' : 'not_visited',
+        timeSpentSeconds: 0,
+      };
+    });
+    setQuestionStates(initialMap);
+    playChime('click');
+  };
 
   // Result Breakdown
   const [resultBreakdown, setResultBreakdown] = useState<ExamResultBreakdown | null>(null);
@@ -447,73 +474,114 @@ export const ExamSimulatorView: React.FC<ExamSimulatorViewProps> = ({
             </div>
           </div>
 
-          {/* Paper Selection Cards */}
-          <div className="bg-white rounded-3xl border border-[#E5E0D8] p-6 shadow-xs space-y-4">
-            <h3 className="text-base font-serif font-bold text-[#4A4A3A]">
-              Choose Examination Simulator
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {mockExamPapersList.map((paper, idx) => (
-                <div
-                  key={paper.id}
-                  onClick={() => setSelectedPaperIndex(idx)}
-                  className={`p-5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between gap-4 ${
-                    selectedPaperIndex === idx
-                      ? 'border-blue-600 bg-blue-50/50 ring-2 ring-blue-500/30'
-                      : 'border-[#E5E0D8] bg-[#FDFBF7] hover:bg-[#F5F2ED]'
-                  }`}
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-900">
-                        {paper.boardOrConductingBody} • {paper.grade}
-                      </span>
-                      <span className="text-xs font-mono font-bold text-[#7A7468]">
-                        {paper.totalTimeMinutes} Mins • {paper.totalMarks} Marks
+          {/* Mode Selector Tabs: All-India Presets vs Custom Test Builder */}
+          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-[#F5F2ED] border border-[#E5E0D8] max-w-md">
+            <button
+              onClick={() => setSimulatorMode('presets')}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                simulatorMode === 'presets'
+                  ? 'bg-white text-blue-900 shadow-2xs'
+                  : 'text-[#7A7468] hover:text-[#4A4A3A]'
+              }`}
+            >
+              <Award className="w-4 h-4" />
+              <span>All-India Mock Papers</span>
+            </button>
+
+            <button
+              onClick={() => setSimulatorMode('custom')}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                simulatorMode === 'custom'
+                  ? 'bg-white text-[#5A634E] shadow-2xs'
+                  : 'text-[#7A7468] hover:text-[#4A4A3A]'
+              }`}
+            >
+              <Sliders className="w-4 h-4" />
+              <span>Custom Test Builder</span>
+            </button>
+          </div>
+
+          {/* Render Custom Test Builder if active */}
+          {simulatorMode === 'custom' && (
+            <CustomTestBuilder
+              currentUser={currentUser}
+              classLevel={classLevel}
+              onStartCustomTest={handleStartCustomExam}
+            />
+          )}
+
+          {/* Paper Selection Cards for Pre-built Papers */}
+          {simulatorMode === 'presets' && (
+            <div className="bg-white rounded-3xl border border-[#E5E0D8] p-6 shadow-xs space-y-4">
+              <h3 className="text-base font-serif font-bold text-[#4A4A3A]">
+                Choose Examination Simulator
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {mockExamPapersList.map((paper, idx) => (
+                  <div
+                    key={paper.id}
+                    onClick={() => {
+                      setActiveCustomPaper(null);
+                      setSelectedPaperIndex(idx);
+                    }}
+                    className={`p-5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between gap-4 ${
+                      selectedPaperIndex === idx && !activeCustomPaper
+                        ? 'border-blue-600 bg-blue-50/50 ring-2 ring-blue-500/30'
+                        : 'border-[#E5E0D8] bg-[#FDFBF7] hover:bg-[#F5F2ED]'
+                    }`}
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-900">
+                          {paper.boardOrConductingBody} • {paper.grade}
+                        </span>
+                        <span className="text-xs font-mono font-bold text-[#7A7468]">
+                          {paper.totalTimeMinutes} Mins • {paper.totalMarks} Marks
+                        </span>
+                      </div>
+                      <h4 className="text-base font-bold text-[#2A2A22]">{paper.title}</h4>
+                      <p className="text-xs text-[#7A7468]">{paper.instructions[0]}</p>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-3 border-t border-[#E5E0D8]/60 text-xs font-semibold text-blue-700">
+                      <span>{paper.sections.map((s) => s.name).join(' • ')}</span>
+                      <span className="flex items-center gap-1">
+                        {selectedPaperIndex === idx && !activeCustomPaper ? 'Selected ✓' : 'Select Paper'}
                       </span>
                     </div>
-                    <h4 className="text-base font-bold text-[#2A2A22]">{paper.title}</h4>
-                    <p className="text-xs text-[#7A7468]">{paper.instructions[0]}</p>
                   </div>
-
-                  <div className="flex items-center justify-between pt-3 border-t border-[#E5E0D8]/60 text-xs font-semibold text-blue-700">
-                    <span>{paper.sections.map((s) => s.name).join(' • ')}</span>
-                    <span className="flex items-center gap-1">
-                      {selectedPaperIndex === idx ? 'Selected ✓' : 'Select Paper'}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Test Instructions & Start CTA */}
-            <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-[#E5E0D8] space-y-3">
-              <h5 className="font-bold text-xs text-[#4A4A3A] uppercase tracking-wider">
-                Official Examination Rules & Marking Scheme:
-              </h5>
-              <ul className="text-xs text-[#6A6354] space-y-1.5 list-disc pl-5">
-                {activePaper.instructions.map((inst, i) => (
-                  <li key={i}>{inst}</li>
                 ))}
-              </ul>
+              </div>
 
-              <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-xs text-[#7A7468]">
-                  Candidate: <strong className="text-[#4A4A3A]">{currentUser.name}</strong> • Roll No:{' '}
-                  <span className="font-mono font-bold text-[#5A634E]">LX-{classLevel}026-NTA</span>
+              {/* Test Instructions & Start CTA */}
+              <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-[#E5E0D8] space-y-3">
+                <h5 className="font-bold text-xs text-[#4A4A3A] uppercase tracking-wider">
+                  Official Examination Rules & Marking Scheme:
+                </h5>
+                <ul className="text-xs text-[#6A6354] space-y-1.5 list-disc pl-5">
+                  {activePaper.instructions.map((inst, i) => (
+                    <li key={i}>{inst}</li>
+                  ))}
+                </ul>
+
+                <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-xs text-[#7A7468]">
+                    Candidate: <strong className="text-[#4A4A3A]">{currentUser.name}</strong> • Roll No:{' '}
+                    <span className="font-mono font-bold text-[#5A634E]">LX-{classLevel}026-NTA</span>
+                  </div>
+
+                  <button
+                    id="start-mock-exam-btn"
+                    onClick={handleStartExam}
+                    className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-blue-900 text-white font-bold text-sm shadow-md hover:bg-blue-800 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Award className="w-4 h-4" />
+                    <span>Begin CBT Examination</span>
+                  </button>
                 </div>
-
-                <button
-                  id="start-mock-exam-btn"
-                  onClick={handleStartExam}
-                  className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-blue-900 text-white font-bold text-sm shadow-md hover:bg-blue-800 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Award className="w-4 h-4" />
-                  <span>Begin CBT Examination</span>
-                </button>
               </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 

@@ -67,6 +67,8 @@ import { DiscussionForumSection } from './components/DiscussionForumSection';
 import { BattleDuelView } from './components/BattleDuelView';
 import { MistakeNotebookView } from './components/MistakeNotebookView';
 import { ExamSimulatorView } from './components/ExamSimulatorView';
+import { WalletModal } from './components/WalletModal';
+import { DualLeaderboardModal } from './components/DualLeaderboardModal';
 import { safeFetchJson } from './utils/api';
 import { loadSavedAlarms, saveAlarmsToStorage, shouldAlarmTrigger } from './utils/alarmStorage';
 import { startAlarmLoop, stopAlarmLoop, sendAlarmBrowserNotification } from './utils/audio';
@@ -145,6 +147,20 @@ export default function App() {
   const [isAndroidInstallModalOpen, setIsAndroidInstallModalOpen] = useState(false);
   const [isBookmarksOpen, setIsBookmarksOpen] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+  const [walletModalTab, setWalletModalTab] = useState<'deposit' | 'redeem' | 'history'>('deposit');
+  const [isDualLeaderboardOpen, setIsDualLeaderboardOpen] = useState(false);
+  const [leaderboardCategory, setLeaderboardCategory] = useState<'quiz' | 'xp'>('quiz');
+
+  const handleOpenWallet = (tab: 'deposit' | 'redeem' | 'history' = 'deposit') => {
+    setWalletModalTab(tab);
+    setIsWalletModalOpen(true);
+  };
+
+  const handleOpenLeaderboard = (type: 'quiz' | 'xp' = 'quiz') => {
+    setLeaderboardCategory(type);
+    setIsDualLeaderboardOpen(true);
+  };
 
   // Study Planner Alarms & Audio Reminders State (persisted in localStorage)
   const [studyAlarms, setStudyAlarms] = useState<StudyAlarm[]>(loadSavedAlarms);
@@ -493,6 +509,8 @@ export default function App() {
         onOpenEditProfile={() => setIsEditProfileOpen(true)}
         onOpenBookmarks={() => setIsBookmarksOpen(true)}
         onOpenFeedback={() => setIsFeedbackModalOpen(true)}
+        onOpenWallet={handleOpenWallet}
+        onOpenLeaderboard={handleOpenLeaderboard}
         notifications={notifications}
         onMarkNotificationRead={handleMarkNotificationRead}
         onOpenAuth={(mode) => {
@@ -813,6 +831,8 @@ export default function App() {
                   setAiInitialPrompt(prompt);
                   setActiveTab('ai-assistant');
                 }}
+                onOpenWallet={handleOpenWallet}
+                onOpenLeaderboard={handleOpenLeaderboard}
               />
             )}
 
@@ -841,6 +861,11 @@ export default function App() {
           </>
         )}
       </main>
+
+      {/* App Footer & Branding Credit */}
+      <footer id="app-branding-footer" className="w-full text-xs text-slate-500 py-4 text-center font-medium opacity-80 mb-16 md:mb-0 border-t border-[#E5E0D8]/40">
+        Made from ❤️ by Business Avengers
+      </footer>
 
       {/* Mobile Bottom Navigation Bar - Student Core Controls */}
       {isStudent && (
@@ -1091,6 +1116,30 @@ export default function App() {
           }
           setActiveTab('learning');
           setIsBookmarksOpen(false);
+        }}
+      />
+
+      {/* Wallet Management Modal (Cash, Coins, Deposits, 1000 Coins = ₹5 Redemptions) */}
+      <WalletModal
+        isOpen={isWalletModalOpen}
+        onClose={() => setIsWalletModalOpen(false)}
+        currentUser={currentUser}
+        initialTab={walletModalTab}
+        onUpdateUser={(updated) => {
+          setCurrentUser((prev) => ({ ...prev, ...updated }));
+          fetchCurrentUser();
+        }}
+      />
+
+      {/* Dual Leaderboards Modal (Quiz Champions & XP Scholars) */}
+      <DualLeaderboardModal
+        isOpen={isDualLeaderboardOpen}
+        onClose={() => setIsDualLeaderboardOpen(false)}
+        currentUser={currentUser}
+        initialType={leaderboardCategory}
+        onStartBattle={() => {
+          setIsDualLeaderboardOpen(false);
+          setActiveTab('battles');
         }}
       />
     </div>

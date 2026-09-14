@@ -23,6 +23,10 @@ import {
   Smartphone,
   Bookmark,
   MessageSquarePlus,
+  Wallet,
+  Coins,
+  IndianRupee,
+  Trophy,
 } from 'lucide-react';
 import { User, NotificationItem } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
@@ -41,6 +45,8 @@ interface HeaderProps {
   onOpenEditProfile?: () => void;
   onOpenBookmarks?: () => void;
   onOpenFeedback?: () => void;
+  onOpenWallet?: (tab?: 'deposit' | 'redeem' | 'history') => void;
+  onOpenLeaderboard?: (type?: 'quiz' | 'xp') => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -57,6 +63,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenEditProfile,
   onOpenBookmarks,
   onOpenFeedback,
+  onOpenWallet,
+  onOpenLeaderboard,
 }) => {
   const [showClassDropdown, setShowClassDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -88,8 +96,8 @@ export const Header: React.FC<HeaderProps> = ({
   const RoleIcon = currentRole.icon;
 
   return (
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-[#E5E0D8] shadow-2xs">
-      <div className="w-full px-3 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-2">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#E5E0D8] shadow-2xs w-full">
+      <div className="w-full max-w-none px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
         {/* Brand & Class Picker */}
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-2.5">
@@ -220,6 +228,35 @@ export const Header: React.FC<HeaderProps> = ({
             <Zap className="w-3.5 h-3.5 text-[#1D8348]" />
             <span>{currentUser.xp.toLocaleString()} XP</span>
           </div>
+
+          {/* Wallet / Coin Balance Button */}
+          {onOpenWallet && (
+            <button
+              id="header-wallet-btn"
+              onClick={() => onOpenWallet('deposit')}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-xs font-bold transition shadow-2xs cursor-pointer"
+              title="LearnX Wallet: Real Cash & Virtual Coins"
+            >
+              <Wallet className="w-3.5 h-3.5 text-amber-700" />
+              <span className="font-mono">₹{currentUser.walletCash ?? 120}</span>
+              <span className="hidden sm:inline text-amber-600 font-mono text-[11px]">
+                ({currentUser.walletCoins ?? 1450} 🪙)
+              </span>
+            </button>
+          )}
+
+          {/* Dual Leaderboards Button */}
+          {onOpenLeaderboard && (
+            <button
+              id="header-leaderboards-btn"
+              onClick={() => onOpenLeaderboard('quiz')}
+              className="hidden lg:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-[#EDF0E9] hover:bg-[#E0E5D8] border border-[#5A634E]/20 text-[#5A634E] text-xs font-bold transition shadow-2xs cursor-pointer"
+              title="Dual Leaderboards: Quiz Champions & XP Scholars"
+            >
+              <Trophy className="w-3.5 h-3.5 text-[#5A634E]" />
+              <span>Leaderboards</span>
+            </button>
+          )}
 
           {/* PWA / Android APK Install Button - visible on larger screens */}
           <PWAInstallButton className="hidden md:flex" />

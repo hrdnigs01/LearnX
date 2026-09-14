@@ -829,4 +829,27 @@ export interface ExamResultBreakdown {
   }[];
 }
 
+export interface UserQuestionAttemptHistory {
+  id: string;
+  userId: string;
+  questionId: string;
+  subject?: string;
+  chapterTopic?: string;
+  classLevel?: number;
+  selectedOptionIndex?: number | null;
+  isCorrect?: boolean;
+  attemptedAt: string;
+  context?: 'battle' | 'custom_test' | 'exam_sim' | 'chapter_quiz';
+}
+
+export interface CustomTestConfig {
+  classLevel: number;
+  targetExam?: string;
+  subject: string;
+  chapterTopic: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard' | 'Mixed';
+  durationMinutes: number;
+  questionCount: number;
+}
+
 
